@@ -1,4 +1,4 @@
-var require_kdb=[{ filename:"6law.kdb"  , url:"http://ya.ksana.tw/kdb/6law.kdb" , desc:""}];  
+var require_kdb=[{ filename:"6law.kdb"  , url:"http://ya.ksana.tw/6law/6law.kdb" , desc:""}];  
 var bootstrap=Require("bootstrap"); 
 var Fileinstaller=Require("fileinstaller");
 var kde=Require('ksana-document').kde;  // Ksana Database Engine
