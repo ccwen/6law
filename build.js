@@ -4550,7 +4550,10 @@ var putPages_new=function(parsed,cb) { //25% faster than create a new document
 		session.json.pageNames.push(t.n);
 		session.json.pageOffsets.push(session.vpos);
 	}
-	
+	var lastfilecount=0;
+	if (session.json.filePageCount.length) lastfilecount=session.json.filePageCount[session.json.filePageCount.length-1];
+	session.json.filePageCount.push(lastfilecount+parsed.texts.length); //accurate page count
+
 	if (fileContent.length==0 || (fileContent.length==1&&!fileContent[0])) {
 		console.log("no content in"+status.filename);
 		fileContent[0]=" "; //work around to avoid empty string array throw in kdbw
@@ -4655,6 +4658,7 @@ var processTags=function(captureTags,tags,texts) {
 
 	var getTextBetween=function(from,to,startoffset,endoffset) {
 		if (from==to) return texts[from].t.substring(startoffset,endoffset);
+		throw "getTextBetween cannot deal with cross page text";
 		var first=texts[from].t.substr(startoffset-1);
 		var middle="";
 		for (var i=from+1;i<to;i++) {
@@ -4663,6 +4667,7 @@ var processTags=function(captureTags,tags,texts) {
 		var last=texts[to].t.substr(0,endoffset-1);
 		return first+middle+last;
 	}
+
 	for (var i=0;i<tags.length;i++) {
 		for (var j=0;j<tags[i].length;j++) {
 			var T=tags[i][j],tagname=T[1],tagoffset=T[0],attributes=T[2],tagvpos=T[3];
@@ -4701,12 +4706,10 @@ var processTags=function(captureTags,tags,texts) {
 						throw "tag unbalance";
 					} else {
 						tagStack.pop();
-
-						text=getTextBetween(prev[3],i,prev[1],tagoffset);
+						text=getTextBetween(prev[3],i,prev[1],tagoffset);						
 						//console.log(text,prev[1],tagoffset)
 					}
 				}
-				
 				status.vpos=tagvpos; 
 				status.tagStack=tagStack;
 				var fields=handler(text, tagname, attr, status);
@@ -4786,6 +4789,7 @@ var initSession=function(config) {
 		,fileContents:[]
 		,fileNames:[]
 		,fileOffsets:[]
+		,filePageCount:[] //2014/11/26
 		,pageNames:[]
 		,pageOffsets:[]
 		,tokens:{}
@@ -4887,6 +4891,7 @@ var createMeta=function() {
 	meta.name=session.config.name;
 	meta.vsize=session.vpos;
 	meta.pagecount=status.pageCount;
+	meta.version=0x20141126;
 	return meta;
 }
 var guessSize=function() {
@@ -7473,6 +7478,17 @@ var toDoc=function(pagenames,texts,others) {
 }
 var getFileRange=function(i) {
 	var engine=this;
+
+	var filePageCount=engine.get(["filePageCount"]);
+	if (filePageCount) {
+		if (i==0) {
+			return {start:0,end:filePageCount[0]-1};
+		} else {
+			return {start:filePageCount[i-1],end:filePageCount[i]-1};
+		}
+	}
+
+	//old buggy code
 	var fileNames=engine.get(["fileNames"]);
 	var fileOffsets=engine.get(["fileOffsets"]);
 	var pageOffsets=engine.get(["pageOffsets"]);
@@ -7493,8 +7509,7 @@ var getFileRange=function(i) {
 	//in case of items with same value
 	//return the last one
 	
-	
-	
+
 	//while (pageOffsets[end+1]==pageOffsets[end]) end--;
 	/*
 	if (i==0) {
@@ -7620,7 +7635,7 @@ var createLocalEngine=function(kdb,cb,context) {
 	}
 	
 	var preload=[["meta"],["fileNames"],["fileOffsets"],
-	["tokens"],["postingslen"],["pageNames"],["pageOffsets"]];
+	["tokens"],["postingslen"],["pageNames"],["pageOffsets"],["filePageCount"]];
 
 	var setPreload=function(res) {
 		engine.dbname=res[0].name;
@@ -7754,7 +7769,8 @@ var createEngine=function(kdbid,context,cb) {
 	if (typeof context=="object") engine.context=context;
 
 	//engine.findLinkBy=link.findLinkBy;
-	$kse("get",{key:[["meta"],["fileNames"],["fileOffsets"],["tokens"],["postingslen"],,["pageNames"],["pageOffsets"]], 
+	$kse("get",{key:[["meta"],["fileNames"],["fileOffsets"],
+		["tokens"],["postingslen"],,["pageNames"],["pageOffsets"],["filePageCount"]], 
 		recursive:true,db:kdbid}).done(function(res){
 		engine.dbname=res[0].name;
 
@@ -7764,6 +7780,7 @@ var createEngine=function(kdbid,context,cb) {
 		engine.cache["postingslen"]=res[4];
 		engine.cache["pageNames"]=res[5];
 		engine.cache["pageOffsets"]=res[6];
+		engine.cache["filePageCount"]=res[7];
 
 //		engine.cache["tokenId"]=res[4];
 //		engine.cache["files"]=res[2];
