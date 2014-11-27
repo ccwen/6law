@@ -7,16 +7,16 @@ var exec=require("child_process").exec;
 var i=0;
 
 var convert=function(fn){
+	i++;
+	if (i>=lst.length) return;
 	if (fn.substr(fn.length-4)==".doc") {
 		var cmd="wscript doc2docx.vbs "+subdir+sep+fn;
 		console.log(fn);
 		exec(cmd,function(err,stdout,stderr){
-			i++;
-			if (i<lst.length)  convert(lst[i]);
+			convert(lst[i]);
 		});
 	} else {
-		i++;
-		if (i<lst.length)  convert(lst[i]);
+		convert(lst[i]);
 	}
 }
 
