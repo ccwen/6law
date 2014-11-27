@@ -9,9 +9,9 @@ var i=0;
 var convert=function(fn){
 	i++;
 	if (i>=lst.length) return;
-	if (fn.substr(fn.length-4)==".doc") {
+	if (fn.substr(fn.length-4)==".doc" && !fs.existsSync(subdir+sep+fn+"x") ) {
 		var cmd="wscript doc2docx.vbs "+subdir+sep+fn;
-		console.log(fn);
+		console.log("converting "+fn);	
 		exec(cmd,function(err,stdout,stderr){
 			convert(lst[i]);
 		});
