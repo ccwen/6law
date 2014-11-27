@@ -7,8 +7,9 @@ const  wdFormatXMLDocument = 19
 const wdFormatDocumentDefault =16
 rem oShell.CurrentDirectory = ofso.GetParentFolderName(Wscript.ScriptFullName) 
 
-fn =  args.Item(0)
+fn =  ofso.GetParentFolderName(Wscript.ScriptFullName)+"\\"+args.Item(0)
 REM Wscript.echo(fn)
+
 
 objWord.Visible = True
 objWord.DisplayAlerts = False
