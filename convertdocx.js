@@ -4,9 +4,20 @@ var subdir=process.argv[3]||"law";
 var lst=fs.readdirSync(subdir);
 var sep=require("path").sep;
 var exec=require("child_process").exec;
+var i=0;
+
 var convert=function(fn){
-	var cmd="wscript doc2docx.vbs "+subdir+sep+fn;
-	exec(cmd);
+	if (fn.substr(fn.length-4)==".doc") {
+		var cmd="wscript doc2docx.vbs "+subdir+sep+fn;
+		console.log(fn);
+		exec(cmd,function(err,stdout,stderr){
+			i++;
+			if (i<lst.length)  convert(lst[i]);
+		});
+	} else {
+		i++;
+		if (i<lst.length)  convert(lst[i]);
+	}
 }
-//lst.length=2;
-lst.map(convert);
+
+convert(lst[i]);
